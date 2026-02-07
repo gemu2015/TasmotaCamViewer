@@ -1,55 +1,78 @@
 import SwiftUI
 
-/// Floating overlay with push-to-talk button, listen toggle, and mute controls.
+/// Floating overlay with push-to-talk button, listen toggle, mute controls, and volume slider.
 struct AudioControlsOverlay: View {
-    let audio: AudioBridge
+    @Bindable var audio: AudioBridge
 
     @State private var isTalking = false
 
     var body: some View {
-        HStack(spacing: 20) {
-            // Listen toggle
-            Button {
-                if audio.state == .listening {
-                    audio.stopAudio()
-                } else {
-                    audio.startListening()
+        VStack(spacing: 10) {
+            // Main controls row
+            HStack(spacing: 20) {
+                // Listen toggle
+                Button {
+                    if audio.state == .listening {
+                        audio.stopAudio()
+                    } else {
+                        audio.startListening()
+                    }
+                } label: {
+                    Image(systemName: audio.state == .listening ? "speaker.wave.2.fill" : "speaker.wave.2")
+                        .imageScale(.large)
+                        .foregroundStyle(audio.state == .listening ? .green : .secondary)
+                        .frame(width: 44, height: 44)
                 }
-            } label: {
-                Image(systemName: audio.state == .listening ? "speaker.wave.2.fill" : "speaker.wave.2")
-                    .imageScale(.large)
-                    .foregroundStyle(audio.state == .listening ? .green : .secondary)
-                    .frame(width: 44, height: 44)
+
+                // Mic mute
+                Button {
+                    audio.isMicMuted.toggle()
+                } label: {
+                    Image(systemName: audio.isMicMuted ? "mic.slash.fill" : "mic.fill")
+                        .imageScale(.large)
+                        .foregroundStyle(audio.isMicMuted ? .red : .secondary)
+                        .frame(width: 44, height: 44)
+                }
+
+                // Push-to-talk button
+                pttButton
+
+                // Speaker mute
+                Button {
+                    audio.isSpeakerMuted.toggle()
+                } label: {
+                    Image(systemName: audio.isSpeakerMuted ? "speaker.slash.fill" : "speaker.fill")
+                        .imageScale(.large)
+                        .foregroundStyle(audio.isSpeakerMuted ? .red : .secondary)
+                        .frame(width: 44, height: 44)
+                }
+
+                // State indicator
+                Text(audio.state.statusText)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 60)
             }
 
-            // Mic mute
-            Button {
-                audio.isMicMuted.toggle()
-            } label: {
-                Image(systemName: audio.isMicMuted ? "mic.slash.fill" : "mic.fill")
-                    .imageScale(.large)
-                    .foregroundStyle(audio.isMicMuted ? .red : .secondary)
-                    .frame(width: 44, height: 44)
+            // Volume slider row
+            HStack(spacing: 8) {
+                Image(systemName: "speaker.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Slider(value: $audio.speakerVolume, in: 1...10, step: 0.5)
+                    .tint(.blue)
+
+                Image(systemName: "speaker.wave.3.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(String(format: "%.0f%%", audio.speakerVolume * 10))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 40)
             }
-
-            // Push-to-talk button
-            pttButton
-
-            // Speaker mute
-            Button {
-                audio.isSpeakerMuted.toggle()
-            } label: {
-                Image(systemName: audio.isSpeakerMuted ? "speaker.slash.fill" : "speaker.fill")
-                    .imageScale(.large)
-                    .foregroundStyle(audio.isSpeakerMuted ? .red : .secondary)
-                    .frame(width: 44, height: 44)
-            }
-
-            // State indicator
-            Text(audio.state.statusText)
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 60)
+            .padding(.horizontal, 4)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)

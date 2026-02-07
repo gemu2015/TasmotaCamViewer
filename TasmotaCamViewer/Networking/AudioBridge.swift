@@ -19,9 +19,9 @@ final class AudioBridge {
     /// Whether the speaker is muted (packets received but not played).
     var isSpeakerMuted: Bool = false
 
-    /// Speaker volume (0.0 – 1.0).
-    var speakerVolume: Float = 1.0 {
-        didSet { audioEngine.volume = speakerVolume }
+    /// Speaker volume / gain (1.0 – 10.0). Controls playback amplification.
+    var speakerVolume: Float = 4.0 {
+        didSet { audioEngine.playbackGain = speakerVolume }
     }
 
     // MARK: - Private
@@ -105,7 +105,7 @@ final class AudioBridge {
 
         do {
             try audioEngine.startPlayback()
-            audioEngine.volume = speakerVolume
+            audioEngine.playbackGain = speakerVolume
             state = .listening
             print("[AudioBridge] Listening — ESP32 mic → iPad speaker")
         } catch {
@@ -153,7 +153,15 @@ final class AudioBridge {
 
     // MARK: - Private
 
+    private var rxPacketCount: UInt64 = 0
+
     private func handleReceivedAudio(_ data: Data) {
+        rxPacketCount += 1
+        if rxPacketCount == 1 {
+            print("[AudioBridge] First audio packet received: \(data.count) bytes, state=\(state), muted=\(isSpeakerMuted)")
+        } else if rxPacketCount % 500 == 0 {
+            print("[AudioBridge] Received \(rxPacketCount) audio packets")
+        }
         guard state == .listening, !isSpeakerMuted else { return }
         audioEngine.enqueuePlayback(data)
     }
