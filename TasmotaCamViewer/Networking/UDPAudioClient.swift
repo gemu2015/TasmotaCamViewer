@@ -99,6 +99,27 @@ final class UDPAudioClient: @unchecked Sendable {
         }
     }
 
+    /// Send the stop command synchronously via POSIX UDP (reliable during app termination).
+    func sendStopSync() {
+        guard var addr = espAddress else { return }
+
+        // Send cmd:0 on the control port (6971) using a temporary POSIX socket
+        var ctrlAddr = addr
+        ctrlAddr.sin_port = Constants.audioBridgeControlPort.bigEndian
+
+        let msg = Array("cmd:0".utf8)
+        let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+        guard fd >= 0 else { return }
+
+        withUnsafePointer(to: &ctrlAddr) { addrPtr in
+            addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                sendto(fd, msg, msg.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size))
+            }
+        }
+        close(fd)
+        print("[UDPAudioClient] Sent stop command (sync)")
+    }
+
     /// Cancel all connections.
     func cancel() {
         isActive = false

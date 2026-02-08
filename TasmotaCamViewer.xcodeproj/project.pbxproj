@@ -123,14 +123,6 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		A50000010000000000000008 /* Audio */ = {
-			isa = PBXGroup;
-			children = (
-				A20000010000000000000011 /* AudioEngine.swift */,
-			);
-			path = Audio;
-			sourceTree = "<group>";
-		};
 		A50000010000000000000006 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
@@ -145,6 +137,14 @@
 				A2000001000000000000000E /* Assets.xcassets */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		A50000010000000000000008 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				A20000010000000000000011 /* AudioEngine.swift */,
+			);
+			path = Audio;
 			sourceTree = "<group>";
 		};
 		A50000010000000000000009 /* Products */ = {
@@ -380,6 +380,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"TasmotaCamViewer/Resources/Preview Content\"";
+				DEVELOPMENT_TEAM = L2H9H8ZLTT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TasmotaCamViewer/Info.plist;
@@ -412,6 +413,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"TasmotaCamViewer/Resources/Preview Content\"";
+				DEVELOPMENT_TEAM = L2H9H8ZLTT;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = TasmotaCamViewer/Info.plist;

@@ -19,6 +19,9 @@ final class AudioBridge {
     /// Whether the speaker is muted (packets received but not played).
     var isSpeakerMuted: Bool = false
 
+    /// Automatically start listening when connected to the ESP32.
+    var autoListen: Bool = true
+
     /// Speaker volume / gain (1.0 – 10.0). Controls playback amplification.
     var speakerVolume: Float = 4.0 {
         didSet { audioEngine.playbackGain = speakerVolume }
@@ -64,6 +67,9 @@ final class AudioBridge {
                     if self.state == .connecting {
                         self.state = .idle
                         print("[AudioBridge] Connected to \(host)")
+                        if self.autoListen {
+                            self.startListening()
+                        }
                     }
 
                 case .audioData(let data):
@@ -82,10 +88,8 @@ final class AudioBridge {
 
     /// Disconnect from the ESP32 and stop all audio.
     func disconnect() {
-        // Tell ESP32 to stop
-        if state.isActive || state == .connecting {
-            client.sendControl(Constants.audioCmdStop)
-        }
+        // Tell ESP32 to stop — use synchronous POSIX send so it works during app termination
+        client.sendStopSync()
 
         eventTask?.cancel()
         eventTask = nil

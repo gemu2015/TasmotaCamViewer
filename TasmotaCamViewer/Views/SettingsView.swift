@@ -11,14 +11,6 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var ipAddress: String = Constants.defaultIPAddress
-    @State private var port: String = "81"
-
-    private let presets: [(name: String, path: String, portNum: String)] = [
-        ("MJPEG Stream", "/cam.mjpeg", "81"),
-        ("Stream (alt)", "/stream", "81"),
-        ("Cam JPG", "/cam.jpg", "81"),
-        ("Diff Stream (motion)", "/diff.mjpeg", "81"),
-    ]
 
     var body: some View {
         NavigationStack {
@@ -31,61 +23,19 @@ struct SettingsView: View {
                             .keyboardType(.decimalPad)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
+                            .onChange(of: ipAddress) {
+                                cameraURL = "http://\(ipAddress):81\(Constants.tasmotaStreamPath)"
+                            }
                     }
 
                     HStack {
-                        Text("Port")
-                            .frame(width: 90, alignment: .leading)
-                        TextField("81", text: $port)
-                            .keyboardType(.numberPad)
-                    }
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Full Stream URL")
+                        Text("Stream URL")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        TextField("http://192.168.188.88:81/stream", text: $cameraURL)
-                            .keyboardType(.URL)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .font(.system(.body, design: .monospaced))
-                    }
-                }
-
-                Section("Tasmota Presets") {
-                    ForEach(presets, id: \.path) { preset in
-                        Button {
-                            port = preset.portNum
-                            cameraURL = "http://\(ipAddress):\(preset.portNum)\(preset.path)"
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading) {
-                                    Text(preset.name)
-                                        .foregroundStyle(.primary)
-                                    Text(":\(preset.portNum)\(preset.path)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .fontDesign(.monospaced)
-                                }
-                                Spacer()
-                                Image(systemName: "arrow.right.circle")
-                                    .foregroundStyle(.blue)
-                            }
-                        }
-                    }
-                }
-
-                Section("Snapshot Endpoints (Port 80)") {
-                    ForEach(Constants.tasmotaSnapshotEndpoints, id: \.self) { endpoint in
-                        HStack {
-                            Text(endpoint)
-                                .font(.system(.body, design: .monospaced))
-                                .foregroundStyle(.secondary)
-                            Spacer()
-                            Text("Single frame")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                        }
+                        Spacer()
+                        Text(cameraURL)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -164,13 +114,10 @@ struct SettingsView: View {
         }
     }
 
-    /// Extract IP and port from the current URL for editing.
+    /// Extract IP from the current URL for editing.
     private func parseURLComponents() {
         guard let url = URL(string: cameraURL),
               let host = url.host else { return }
         ipAddress = host
-        if let urlPort = url.port {
-            port = String(urlPort)
-        }
     }
 }

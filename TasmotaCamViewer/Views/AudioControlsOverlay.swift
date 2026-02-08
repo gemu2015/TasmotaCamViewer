@@ -73,6 +73,13 @@ struct AudioControlsOverlay: View {
                     .frame(width: 40)
             }
             .padding(.horizontal, 4)
+
+            // Auto-listen toggle
+            Toggle("Auto-listen on connect", isOn: $audio.autoListen)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .tint(.green)
+                .padding(.horizontal, 4)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)

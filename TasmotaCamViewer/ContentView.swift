@@ -95,6 +95,10 @@ struct ContentView: View {
                 break
             }
         }
+        // Shut down audio bridge when the app is terminated
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willTerminateNotification)) { _ in
+            audio.disconnect()
+        }
         // React to audioEnabled toggle
         .onChange(of: audioEnabled) { _, isEnabled in
             if isEnabled {

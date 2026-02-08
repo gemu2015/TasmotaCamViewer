@@ -25,18 +25,8 @@ enum Constants {
     // JPEG markers
     static let jpegSOI: [UInt8] = [0xFF, 0xD8]
 
-    // Tasmota stream endpoints (port 81)
-    static let tasmotaStreamEndpoints = [
-        "/cam.mjpeg",
-        "/stream",
-        "/cam.jpg",
-    ]
-
-    // Tasmota single-frame snapshot endpoints (port 80)
-    static let tasmotaSnapshotEndpoints = [
-        "/wc.jpg",
-        "/snapshot.jpg",
-    ]
+    // Tasmota stream endpoint (port 81)
+    static let tasmotaStreamPath = "/stream"
 
     // MARK: - Audio Bridge (UDP) — xdrv_42_5_i2s_bridge_idf51.ino
 
