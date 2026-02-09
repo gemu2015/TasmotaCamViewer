@@ -10,6 +10,7 @@ struct ContentView: View {
     @AppStorage("autoConnect") private var autoConnect: Bool = true
     @AppStorage("audioEnabled") private var audioEnabled: Bool = false
     @AppStorage("speakerVolume") private var speakerVolume: Double = 1.0
+    @AppStorage("autoListenOnConnect") private var autoListenOnConnect: Bool = true
 
     @Environment(\.scenePhase) private var scenePhase
 
@@ -61,9 +62,10 @@ struct ContentView: View {
                 audioEnabled: $audioEnabled,
                 speakerVolume: $speakerVolume,
                 onConnect: {
+                    audio.disconnect()
                     stream.disconnect()
                     stream.connect(to: cameraURL)
-                    connectAudioIfEnabled()
+                    // audio will auto-connect when stream reaches .streaming
                 }
             )
         }
@@ -75,8 +77,15 @@ struct ContentView: View {
         }
         // Auto-connect on launch
         .onAppear {
+            audio.autoListen = autoListenOnConnect
             if autoConnect && !cameraURL.isEmpty {
                 stream.connect(to: cameraURL)
+                // audio connects once stream is up (see onChange of stream.state)
+            }
+        }
+        // Start audio only after video stream is confirmed up
+        .onChange(of: stream.state) { _, newState in
+            if newState == .streaming && audioEnabled && audio.state == .idle {
                 connectAudioIfEnabled()
             }
         }
@@ -89,7 +98,7 @@ struct ContentView: View {
             case .active:
                 if oldPhase == .background && autoConnect && !cameraURL.isEmpty {
                     stream.connect(to: cameraURL)
-                    connectAudioIfEnabled()
+                    // audio will auto-connect when stream reaches .streaming
                 }
             default:
                 break
@@ -102,7 +111,10 @@ struct ContentView: View {
         // React to audioEnabled toggle
         .onChange(of: audioEnabled) { _, isEnabled in
             if isEnabled {
-                connectAudioIfEnabled()
+                if stream.state == .streaming {
+                    connectAudioIfEnabled()
+                }
+                // else: will auto-connect when stream reaches .streaming
             } else {
                 audio.disconnect()
             }
@@ -110,6 +122,14 @@ struct ContentView: View {
         // Sync speaker volume
         .onChange(of: speakerVolume) { _, newValue in
             audio.speakerVolume = Float(newValue)
+        }
+        // Persist autoListen toggle from overlay
+        .onChange(of: audio.autoListen) { _, newValue in
+            autoListenOnConnect = newValue
+        }
+        // Sync stored value back to audio bridge
+        .onChange(of: autoListenOnConnect) { _, newValue in
+            audio.autoListen = newValue
         }
     }
 

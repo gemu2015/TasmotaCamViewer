@@ -58,6 +58,9 @@ final class AudioBridge {
 
         let eventStream = client.connect(to: host)
 
+        // send stop to clear any stale bridge state on ESP32
+        client.sendControl(Constants.audioCmdStop)
+
         eventTask = Task { @MainActor [weak self] in
             for await event in eventStream {
                 guard let self, !Task.isCancelled else { break }
@@ -68,7 +71,11 @@ final class AudioBridge {
                         self.state = .idle
                         print("[AudioBridge] Connected to \(host)")
                         if self.autoListen {
-                            self.startListening()
+                            // small delay to let ESP32 finish bridge init
+                            try? await Task.sleep(for: .milliseconds(500))
+                            if !Task.isCancelled && self.state == .idle {
+                                self.startListening()
+                            }
                         }
                     }
 
@@ -104,8 +111,10 @@ final class AudioBridge {
     func startListening() {
         guard state != .listening else { return }
 
-        // Tell ESP32 to capture mic and send audio to us
         client.sendControl(Constants.audioCmdWrite)
+
+        // Clean stop of capture before switching to playback (half-duplex)
+        audioEngine.stopCapture()
 
         do {
             try audioEngine.startPlayback()
@@ -122,10 +131,9 @@ final class AudioBridge {
     func startTalking() {
         guard state != .talking else { return }
 
-        // Tell ESP32 to receive audio and play on speaker
         client.sendControl(Constants.audioCmdRead)
 
-        // Stop playback while talking (half-duplex)
+        // Clean stop of playback before switching to capture (half-duplex)
         audioEngine.stopPlayback()
 
         do {

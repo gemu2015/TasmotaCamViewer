@@ -50,6 +50,7 @@ final class MJPEGStream {
 
     /// Connect to the given MJPEG stream URL.
     func connect(to urlString: String) {
+        print("[MJPEGStream] connect() called for \(urlString)")
         disconnect()
 
         currentURL = urlString
@@ -65,6 +66,7 @@ final class MJPEGStream {
 
     /// Disconnect from the current stream.
     func disconnect() {
+        print("[MJPEGStream] disconnect()")
         streamTask?.cancel()
         streamTask = nil
         reconnectTask?.cancel()
@@ -138,15 +140,15 @@ final class MJPEGStream {
     }
 
     private func handleError(_ error: StreamError) {
+        print("[MJPEGStream] Error: \(error.localizedDescription)")
         state = .error(error.localizedDescription)
         fps = 0.0
-
-        // Attempt auto-reconnection
         scheduleReconnect()
     }
 
     private func scheduleReconnect() {
         guard reconnectAttempt < Constants.maxReconnectAttempts else {
+            print("[MJPEGStream] Max reconnect attempts reached")
             state = .error("Connection lost. Tap Retry to reconnect.")
             return
         }
@@ -157,14 +159,19 @@ final class MJPEGStream {
             Constants.maxReconnectDelay
         )
 
+        print("[MJPEGStream] Reconnecting in \(String(format: "%.1f", delay))s (attempt \(reconnectAttempt)/\(Constants.maxReconnectAttempts))")
         state = .reconnecting(attempt: reconnectAttempt)
 
         reconnectTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(delay))
 
-            guard let self, !Task.isCancelled else { return }
+            guard let self, !Task.isCancelled else {
+                print("[MJPEGStream] Reconnect task cancelled")
+                return
+            }
             guard let url = URL(string: self.currentURL) else { return }
 
+            print("[MJPEGStream] Attempting reconnect to \(self.currentURL)")
             self.startStreaming(url: url)
         }
     }
