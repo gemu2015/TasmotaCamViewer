@@ -1,4 +1,4 @@
-# TasmotaCamViewerMac
+# TasmotaCamViewer for IOS
 
 This xcode Project was completly written by Claude OPUS 4.6.
 It displays a Tasmota CAM and allows sound IO also
