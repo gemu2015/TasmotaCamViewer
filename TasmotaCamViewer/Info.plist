@@ -15,5 +15,9 @@
 	<string>TasmotaCamViewer needs microphone access to send audio to your ESP32 device for intercom communication.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>TasmotaCamViewer needs access to save camera snapshots to your photo library.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 </dict>
 </plist>

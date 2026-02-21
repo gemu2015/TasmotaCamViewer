@@ -14,6 +14,7 @@ final class UDPAudioClient: @unchecked Sendable {
 
     enum Event: Sendable {
         case audioData(Data)
+        case ring
         case connected
         case error(AudioBridgeError)
         case completed
@@ -221,6 +222,14 @@ final class UDPAudioClient: @unchecked Sendable {
             }
 
             if n > 0 {
+                // Detect ring signal: small packet containing "RING"
+                if n <= 16, let str = String(bytes: buffer[0..<n], encoding: .utf8),
+                   str.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() == "RING" {
+                    print("[UDPAudioClient] RING received!")
+                    continuation?.yield(.ring)
+                    continue
+                }
+
                 let data = Data(bytes: buffer, count: n)
                 packetCount += 1
                 if packetCount == 1 {

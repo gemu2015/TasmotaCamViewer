@@ -5,7 +5,9 @@ struct CameraToolbarView: ToolbarContent {
     let stream: MJPEGStream
     let audio: AudioBridge
     @Binding var audioEnabled: Bool
+    @Binding var lightOn: Bool
     @Binding var showSettings: Bool
+    var onToggleLight: () -> Void
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
@@ -31,6 +33,15 @@ struct CameraToolbarView: ToolbarContent {
                         .imageScale(.large)
                 }
                 .disabled(stream.currentFrame == nil)
+
+                // Light toggle button
+                Button {
+                    onToggleLight()
+                } label: {
+                    Image(systemName: lightOn ? "lightbulb.fill" : "lightbulb")
+                        .imageScale(.large)
+                        .foregroundStyle(lightOn ? .yellow : .secondary)
+                }
 
                 // Audio toggle button
                 Button {

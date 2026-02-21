@@ -27,11 +27,18 @@ final class AudioBridge {
         didSet { audioEngine.playbackGain = speakerVolume }
     }
 
+    /// True when a ring signal was received (auto-clears after a few seconds).
+    var isRinging: Bool = false
+
+    /// Callback invoked when a ring signal is received from the ESP32.
+    var onRing: (() -> Void)?
+
     // MARK: - Private
 
     private let client = UDPAudioClient()
     private let audioEngine = AudioEngine()
     private var eventTask: Task<Void, Never>?
+    private var ringClearTask: Task<Void, Never>?
     private var currentHost: String = ""
 
     // MARK: - Lifecycle
@@ -81,6 +88,9 @@ final class AudioBridge {
 
                 case .audioData(let data):
                     self.handleReceivedAudio(data)
+
+                case .ring:
+                    self.handleRing()
 
                 case .error(let error):
                     self.state = .error(error.localizedDescription)
@@ -176,5 +186,20 @@ final class AudioBridge {
         }
         guard state == .listening, !isSpeakerMuted else { return }
         audioEngine.enqueuePlayback(data)
+    }
+
+    private func handleRing() {
+        guard !isRinging else { return }  // debounce
+        print("[AudioBridge] 🔔 RING!")
+        isRinging = true
+        onRing?()
+
+        // Auto-clear ringing state after 5 seconds
+        ringClearTask?.cancel()
+        ringClearTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            guard let self, !Task.isCancelled else { return }
+            self.isRinging = false
+        }
     }
 }
