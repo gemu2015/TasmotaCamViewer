@@ -43,6 +43,15 @@ final class UDPAudioClient: @unchecked Sendable {
             // 1. Create POSIX UDP socket for audio data on port 6970
             self.setupAudioSocket(host: host)
 
+            // UDP needs no handshake: report "connected" as soon as the socket is
+            // bound. On iPadOS the NWConnection below sometimes never reaches
+            // .ready (local-network privacy path), which left the bridge stuck in
+            // "connecting" with picture but no sound (2026-09-19). The extra yield
+            // is harmless — AudioBridge only acts on it while still connecting.
+            if self.audioSocketFD >= 0 {
+                continuation.yield(.connected)
+            }
+
             // 2. Create NWConnection for control commands → ESP32:6971
             let nwHost = NWEndpoint.Host(host)
             let ctrlPort = NWEndpoint.Port(rawValue: Constants.audioBridgeControlPort)!
@@ -69,21 +78,35 @@ final class UDPAudioClient: @unchecked Sendable {
         }
     }
 
-    /// Send a control command (e.g., "cmd:1") to ESP32 port 6971.
+    /// Send a control command (e.g., "cmd:1") to ESP32 port 6971 via POSIX UDP.
     func sendControl(_ command: String) {
-        guard let controlConnection, isActive else {
+        guard isActive, var addr = espAddress else {
             print("[UDPAudioClient] Cannot send control: not connected")
             return
         }
 
-        let data = Data(command.utf8)
-        controlConnection.send(content: data, completion: .contentProcessed { error in
-            if let error {
-                print("[UDPAudioClient] Control send error: \(error)")
-            } else {
-                print("[UDPAudioClient] Sent control: '\(command)'")
+        var ctrlAddr = addr
+        ctrlAddr.sin_port = Constants.audioBridgeControlPort.bigEndian
+
+        let msg = Array(command.utf8)
+        let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+        guard fd >= 0 else {
+            print("[UDPAudioClient] Cannot create control socket")
+            return
+        }
+
+        let sent = withUnsafePointer(to: &ctrlAddr) { addrPtr in
+            addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
+                sendto(fd, msg, msg.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size))
             }
-        })
+        }
+        close(fd)
+
+        if sent > 0 {
+            print("[UDPAudioClient] Sent control: '\(command)' (\(sent) bytes)")
+        } else {
+            print("[UDPAudioClient] Control send failed: \(String(cString: strerror(errno)))")
+        }
     }
 
     /// Send raw PCM audio data to ESP32 port 6970.
@@ -100,32 +123,15 @@ final class UDPAudioClient: @unchecked Sendable {
         }
     }
 
-    /// Send the stop command synchronously via POSIX UDP (reliable during app termination).
+    /// Send the stop command (convenience wrapper).
     func sendStopSync() {
-        guard var addr = espAddress else { return }
-
-        // Send cmd:0 on the control port (6971) using a temporary POSIX socket
-        var ctrlAddr = addr
-        ctrlAddr.sin_port = Constants.audioBridgeControlPort.bigEndian
-
-        let msg = Array("cmd:0".utf8)
-        let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-        guard fd >= 0 else { return }
-
-        withUnsafePointer(to: &ctrlAddr) { addrPtr in
-            addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
-                sendto(fd, msg, msg.count, 0, sa, socklen_t(MemoryLayout<sockaddr_in>.size))
-            }
-        }
-        close(fd)
-        print("[UDPAudioClient] Sent stop command (sync)")
+        sendControl(Constants.audioCmdStop)
     }
 
     /// Cancel all connections.
     func cancel() {
         isActive = false
 
-        // Close the POSIX socket — this unblocks the recvfrom() in the receive thread
         if audioSocketFD >= 0 {
             close(audioSocketFD)
             audioSocketFD = -1
@@ -145,7 +151,6 @@ final class UDPAudioClient: @unchecked Sendable {
 
     /// Set up a POSIX UDP socket bound to local port 6970 and start a receive thread.
     private func setupAudioSocket(host: String) {
-        // Create UDP socket
         let fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         guard fd >= 0 else {
             print("[UDPAudioClient] Failed to create socket: \(String(cString: strerror(errno)))")
@@ -153,17 +158,15 @@ final class UDPAudioClient: @unchecked Sendable {
             return
         }
 
-        // Allow address reuse
         var reuse: Int32 = 1
         setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &reuse, socklen_t(MemoryLayout<Int32>.size))
         setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &reuse, socklen_t(MemoryLayout<Int32>.size))
 
-        // Bind to local port 6970
         var localAddr = sockaddr_in()
         localAddr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         localAddr.sin_family = sa_family_t(AF_INET)
         localAddr.sin_port = Constants.audioBridgeDataPort.bigEndian
-        localAddr.sin_addr.s_addr = INADDR_ANY  // already 0, no byte swap needed
+        localAddr.sin_addr.s_addr = INADDR_ANY
 
         let bindResult = withUnsafePointer(to: &localAddr) { addrPtr in
             addrPtr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sa in
@@ -178,7 +181,6 @@ final class UDPAudioClient: @unchecked Sendable {
             return
         }
 
-        // Store the ESP32 destination address for sendto()
         var destAddr = sockaddr_in()
         destAddr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
         destAddr.sin_family = sa_family_t(AF_INET)
@@ -188,14 +190,12 @@ final class UDPAudioClient: @unchecked Sendable {
         }
         self.espAddress = destAddr
 
-        // Set receive timeout so the thread can check isActive periodically
-        var tv = timeval(tv_sec: 0, tv_usec: 100_000) // 100ms timeout
+        var tv = timeval(tv_sec: 0, tv_usec: 100_000)
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
 
         self.audioSocketFD = fd
         print("[UDPAudioClient] Audio socket bound to port \(Constants.audioBridgeDataPort), sending to \(host):\(Constants.audioBridgeDataPort)")
 
-        // Start background receive thread
         let thread = Thread { [weak self] in
             self?.receiveLoop()
         }
@@ -243,11 +243,9 @@ final class UDPAudioClient: @unchecked Sendable {
             } else if n < 0 {
                 let err = errno
                 if err == EAGAIN || err == EWOULDBLOCK {
-                    // Timeout — just loop and check isActive
                     continue
                 }
                 if err == EBADF || !isActive {
-                    // Socket closed — exit
                     break
                 }
                 print("[UDPAudioClient] recvfrom error: \(String(cString: strerror(err)))")
