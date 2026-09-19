@@ -56,11 +56,13 @@ final class AudioEngine {
 
     func configureSession(forPlaybackOnly: Bool = false) throws {
         let session = AVAudioSession.sharedInstance()
-        if forPlaybackOnly {
-            try session.setCategory(.playback, options: [])
-        } else {
-            try session.setCategory(.playAndRecord, options: [.defaultToSpeaker, .allowBluetoothHFP])
-        }
+        // Always .playAndRecord, even for listen-only. Switching to .playback after
+        // a push-to-talk left the engine's input node in the graph with a dead
+        // format, and engine.start() failed — sound was gone until the app was
+        // restarted (iPad, 2026-09-19). macOS has no session, so the Mac build
+        // never saw this. .defaultToSpeaker keeps the output on the speaker.
+        _ = forPlaybackOnly
+        try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker, .allowBluetoothHFP])
         try session.setPreferredIOBufferDuration(0.02)
         try session.setActive(true)
         print("[AudioEngine] Session: category=\(session.category.rawValue), rate=\(session.sampleRate), route=\(session.currentRoute.outputs.map { $0.portName })")
