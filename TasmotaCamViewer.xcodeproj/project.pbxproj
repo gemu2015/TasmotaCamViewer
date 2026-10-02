@@ -19,6 +19,8 @@
 		A1000001000000000000000A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000A /* SettingsView.swift */; };
 		A1000001000000000000000B /* CameraToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000B /* CameraToolbarView.swift */; };
 		A1000001000000000000000C /* SnapshotPreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000C /* SnapshotPreviewSheet.swift */; };
+		A5F000010000000000000002 /* StreamRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F000010000000000000001; };
+		A5F000010000000000000004 /* RecordingSavedBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F000010000000000000003; };
 		A1000001000000000000000D /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000D /* Constants.swift */; };
 		A1000001000000000000000E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000E /* Assets.xcassets */; };
 		A1000001000000000000000F /* AudioBridgeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000000F /* AudioBridgeState.swift */; };
@@ -42,6 +44,8 @@
 		A2000001000000000000000A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A2000001000000000000000B /* CameraToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraToolbarView.swift; sourceTree = "<group>"; };
 		A2000001000000000000000C /* SnapshotPreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotPreviewSheet.swift; sourceTree = "<group>"; };
+		A5F000010000000000000001 /* StreamRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StreamRecorder.swift; sourceTree = "<group>"; };
+		A5F000010000000000000003 /* RecordingSavedBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingSavedBanner.swift; sourceTree = "<group>"; };
 		A2000001000000000000000D /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		A2000001000000000000000E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000001000000000000000F /* AudioBridgeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioBridgeState.swift; sourceTree = "<group>"; };
@@ -64,6 +68,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A5F000010000000000000005 /* Recording */ = {
+			isa = PBXGroup;
+			children = (
+				A5F000010000000000000001 /* StreamRecorder.swift */,
+			);
+			path = Recording;
+			sourceTree = "<group>";
+		};
 		A50000010000000000000001 = {
 			isa = PBXGroup;
 			children = (
@@ -80,6 +92,7 @@
 				A50000010000000000000003 /* Models */,
 				A50000010000000000000004 /* Networking */,
 				A50000010000000000000008 /* Audio */,
+				A5F000010000000000000005 /* Recording */,
 				A50000010000000000000005 /* Views */,
 				A50000010000000000000006 /* Utilities */,
 				A50000010000000000000007 /* Resources */,
@@ -119,6 +132,7 @@
 				A2000001000000000000000B /* CameraToolbarView.swift */,
 				A2000001000000000000000C /* SnapshotPreviewSheet.swift */,
 				A20000010000000000000014 /* AudioControlsOverlay.swift */,
+				A5F000010000000000000003 /* RecordingSavedBanner.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -243,6 +257,8 @@
 				A10000010000000000000012 /* UDPAudioClient.swift in Sources */,
 				A10000010000000000000013 /* AudioBridge.swift in Sources */,
 				A10000010000000000000014 /* AudioControlsOverlay.swift in Sources */,
+				A5F000010000000000000002 /* StreamRecorder.swift in Sources */,
+				A5F000010000000000000004 /* RecordingSavedBanner.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

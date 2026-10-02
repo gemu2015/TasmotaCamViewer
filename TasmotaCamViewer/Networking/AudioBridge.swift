@@ -33,6 +33,9 @@ final class AudioBridge {
     /// Callback invoked when a ring signal is received from the ESP32.
     var onRing: (() -> Void)?
 
+    /// Called with every received microphone packet (16 kHz, 16 bit, stereo interleaved), muted or not.
+    @ObservationIgnored var onReceivedAudio: ((Data) -> Void)?
+
     // MARK: - Private
 
     private let client = UDPAudioClient()
@@ -184,6 +187,7 @@ final class AudioBridge {
         } else if rxPacketCount % 500 == 0 {
             print("[AudioBridge] Received \(rxPacketCount) audio packets")
         }
+        onReceivedAudio?(data)
         guard state == .listening, !isSpeakerMuted else { return }
         audioEngine.enqueuePlayback(data)
     }

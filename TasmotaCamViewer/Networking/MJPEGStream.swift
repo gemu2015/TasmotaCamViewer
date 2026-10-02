@@ -24,6 +24,9 @@ final class MJPEGStream {
     /// Whether the snapshot sheet is presented.
     var showSnapshot = false
 
+    /// Called for every decoded frame (the recorder hooks in here).
+    @ObservationIgnored var onFrame: ((CGImage) -> Void)?
+
     // MARK: - Private
 
     private let client = MJPEGStreamClient()
@@ -122,6 +125,7 @@ final class MJPEGStream {
 
     private func handleFrame(_ image: UIImage) {
         currentFrame = image
+        if let cg = image.recordingCGImage { onFrame?(cg) }
         frameCount += 1
 
         // Update state to streaming on first frame
