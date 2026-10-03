@@ -35,7 +35,8 @@ struct SettingsView: View {
                                 .frame(width: 50, alignment: .leading)
 
                             TextField("IP Address", text: binding(for: index))
-                                .keyboardType(.decimalPad)
+                                // not .decimalPad: with a German locale its separator key is a comma, no point
+                                .keyboardType(.numbersAndPunctuation)
                                 .autocorrectionDisabled()
                                 .textInputAutocapitalization(.never)
                                 .fontDesign(.monospaced)
@@ -138,7 +139,8 @@ struct SettingsView: View {
             get: { index < ips.count ? ips[index] : "" },
             set: { newValue in
                 while ips.count <= index { ips.append("") }
-                ips[index] = newValue
+                // A German keyboard layout offers a comma where an IP address needs a point.
+                ips[index] = newValue.replacingOccurrences(of: ",", with: ".")
                 if index == selectedIPIndex {
                     applySelectedIP()
                 }
