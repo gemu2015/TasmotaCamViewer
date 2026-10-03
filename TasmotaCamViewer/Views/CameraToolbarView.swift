@@ -10,6 +10,8 @@ struct CameraToolbarView: ToolbarContent {
     @Binding var showSettings: Bool
     var onToggleLight: () -> Void
     var onToggleRecording: () -> Void
+    /// false on a narrow iPhone: six buttons leave no room for the text, it goes into a pill under the bar
+    var showStatusText = true
 
     var body: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
@@ -19,9 +21,11 @@ struct CameraToolbarView: ToolbarContent {
                     .fill(statusColor)
                     .frame(width: 10, height: 10)
 
-                Text(statusLabel)
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                if showStatusText {
+                    Text(Self.statusLabel(for: stream))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
             }
         }
 
@@ -116,6 +120,15 @@ struct CameraToolbarView: ToolbarContent {
         }
     }
 
+    static func statusColor(for stream: MJPEGStream) -> Color {
+        switch stream.state {
+        case .streaming: return .green
+        case .connecting, .reconnecting: return .orange
+        case .error: return .red
+        case .disconnected: return .gray
+        }
+    }
+
     private var statusColor: Color {
         switch stream.state {
         case .streaming:
@@ -129,7 +142,7 @@ struct CameraToolbarView: ToolbarContent {
         }
     }
 
-    private var statusLabel: String {
+    static func statusLabel(for stream: MJPEGStream) -> String {
         switch stream.state {
         case .streaming:
             return String(format: "%.1f FPS", stream.fps)

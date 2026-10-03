@@ -19,6 +19,7 @@ struct ContentView: View {
     @AppStorage("autoListenOnConnect") private var autoListenOnConnect: Bool = true
 
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// Extract the host IP from the camera URL.
     private var espHost: String? {
@@ -33,6 +34,20 @@ struct ContentView: View {
 
                 // Camera frame display
                 CameraStreamView(stream: stream)
+
+                // Narrow iPhone: connection state and frame rate in a pill under the bar
+                if sizeClass == .compact {
+                    VStack {
+                        Text(CameraToolbarView.statusLabel(for: stream))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.white.opacity(0.85))
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(.white.opacity(0.14), in: Capsule())
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 12).padding(.top, 6)
+                        Spacer()
+                    }
+                }
 
                 // Connection status overlay
                 ConnectionStatusBanner(state: stream.state) {
@@ -89,7 +104,8 @@ struct ContentView: View {
                     lightOn: $lightOn,
                     showSettings: $showSettings,
                     onToggleLight: { toggleLight() },
-                    onToggleRecording: { toggleRecording() }
+                    onToggleRecording: { toggleRecording() },
+                    showStatusText: sizeClass != .compact
                 )
             }
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
